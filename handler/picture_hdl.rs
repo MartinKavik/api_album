@@ -1,8 +1,8 @@
 use actix_web::{web, Result, error, Error, HttpResponse };
-use log::*;
+use log::{info};
 use diesel::r2d2::{ConnectionManager};
 use diesel::pg::PgConnection;
-use diesel::*;
+use diesel::{QueryDsl, RunQueryDsl};
 use actix_multipart::{Multipart, Field, MultipartError};
 use futures::{future, Future, Stream};
 use base64;
@@ -41,8 +41,6 @@ pub fn post_picture(
 	pool: web::Data<Pool>
 ) -> impl Future<Item = HttpResponse, Error = Error> {
 	info!("post_picture");
-
-	//let con: &PgConnection = &pool.get().unwrap();
 
 	multipart
         .map_err(error::ErrorInternalServerError)

@@ -1,4 +1,4 @@
-use simplelog::*;
+use simplelog::{Config, LevelFilter, WriteLogger};
 use std::fs::File;
 
 use crate::env_util;
