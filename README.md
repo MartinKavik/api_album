@@ -18,11 +18,28 @@ API for albums
 * r2d2 : connection pool
 
 ## Installation
+
+### Rust
+
 Install Rustup + Cargo :
 
 https://www.rust-lang.org/learn/get-started
 
+### Database
+
+Install PostgreSQL : 
+
+https://www.postgresql.org/
+
+Install PgAddmin : 
+
+https://www.postgresql.org/
+
+
 ## Configuration
+
+### Dotenv
+
 Create in root folder the file `.env` containing : 
 ```
 JWT_SECRET=jwt_secret
@@ -37,20 +54,14 @@ ex :
 LOG_FILE=C:\\Users\\toto\\log.log 
 ```
 
-## Pgsql
+### Database
 
-If you encounter this error at build : 
-```
-error: linking with `cc` failed: exit code: 1
-```
+Create the database with `/sql/script.sql`
 
-Fedora : Symlink missing for Pgsql
-```Shell
-sudo ln -s /usr/lib64/libpq.so.5 /usr/lib/libpq.so
-```
-Windows : Add in Path
-```
-C:\Program Files\PostgreSQL\11\lib
+Create user in BDD :
+```SQL
+INSERT INTO public."user"("email", "password")
+VALUES ('test@test.com', digest('password', 'sha256'))
 ```
 
 ## Run
@@ -66,3 +77,18 @@ Install extensions :
 ## Testing
 http://127.0.0.1:8080/login
 
+## Errors
+
+If you encounter this error at build : 
+```
+error: linking with `cc` failed: exit code: 1
+```
+
+Fedora : Symlink missing for Pgsql
+```Shell
+sudo ln -s /usr/lib64/libpq.so.5 /usr/lib/libpq.so
+```
+Windows : Add in Path
+```
+C:\Program Files\PostgreSQL\11\lib
+```
