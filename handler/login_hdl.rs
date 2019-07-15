@@ -14,18 +14,23 @@ mod token;
 mod login;
 #[path="../schema/user_sch.rs"]
 mod user_sch;
-#[path="../model/user.rs"]
-mod user;
 
 type Pool = r2d2::Pool<ConnectionManager<PgConnection>>;
 
 pub fn login(
-	login: web::Json<login::Login>,
+	login_json: web::Json<login::Login>,
 	pool: web::Data<Pool>
 ) -> Result<web::Json<token::Token>>  {
 	info!("login");
-    //TODO : check in BDD
-	let result = token_util::create_token(&login.email);
+    
+	let login = login_json.into_inner();
+	let res_exist = user_exists(&login, pool);
+	if !res_exist {
+		return Err(service_error::ServiceError::Unauthorized.into());
+	};
+	
+	let email = &login.email;
+	let result = token_util::create_token(email);
 	match result {
 		Ok(t) =>  Ok(web::Json(token::Token { token: t })),
 		Err(_e) => Err(service_error::ServiceError::Unauthorized.into())
@@ -33,19 +38,29 @@ pub fn login(
 }
 
 fn user_exists(
-	login: login::Login,
+	login: &login::Login,
 	pool: web::Data<Pool>
-) ->  Result<bool>  {
-	let sha256 = login.password;
+) ->  bool {
+	let email = &login.email;
+	let password = &login.password;
+	let sha256 = password;
 	let connection: &PgConnection = &pool.get().unwrap();
 
 	let res = select(exists(user_sch::user::dsl::user
-		.filter(user_sch::user::email.eq(login.email)
+		.filter(user_sch::user::email.eq(email)
 			.and(user_sch::user::password.eq(sha256)))))
 			.execute(connection);
+			//.get_result(connection);
 
-	match res {
-		Ok(_r) => Ok(true),
-		Err(_e) => Err(service_error::ServiceError::InternalServerError.into())
-	}
+	true
+	/*match res {
+		Ok(res) => {
+			if res > 0 {
+				true
+			} else {
+				false
+			}
+		},
+		Err(_e) => false
+	}*/
 }

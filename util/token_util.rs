@@ -7,7 +7,7 @@ use crate::env_util;
 #[path="../model/claims.rs"]
 mod claims;
 
-pub fn create_token(email: &str) -> Result<String, errors::Error> {
+pub fn create_token(email: &String) -> Result<String, errors::Error> {
     let claims = claims::Claims::with_email(&email);
     encode(&Header::default(), &claims, env_util::get_var("JWT_SECRET").as_ref())
 }
