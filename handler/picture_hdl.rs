@@ -85,7 +85,7 @@ fn get_filedata_vec(field: Field) -> Box<Future<Item = Vec<u8>, Error = Error>> 
 	Box::new(
         field.fold(Vec::new(), move |mut acc : Vec<u8>, bytes| {
             acc.append(bytes.to_vec().as_mut());
-           	let rt: Result<Vec<u8>, MultipartError> = Ok(acc);
+			let rt: Result<Vec<u8>, MultipartError> = Ok(acc);
 			future::result(rt)
         })
         .map_err(|e| {

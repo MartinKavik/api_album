@@ -4,6 +4,7 @@ use diesel::pg::PgConnection;
 use diesel::r2d2::{ConnectionManager};
 use diesel::*;
 use diesel::dsl::exists;
+use sha2::{Sha256, Digest};
 
 use crate::token_util;
 use crate::service_error;
@@ -24,8 +25,8 @@ pub fn login(
 	info!("login");
     
 	let login = login_json.into_inner();
-	let res_exist = user_exists(&login, pool);
-	if !res_exist {
+	let exist = user_exists(&login, pool);
+	if !exist {
 		return Err(service_error::ServiceError::Unauthorized.into());
 	};
 	
@@ -43,24 +44,21 @@ fn user_exists(
 ) ->  bool {
 	let email = &login.email;
 	let password = &login.password;
-	let sha256 = password;
+
+	let mut hasher = Sha256::new();
+	hasher.input(password);
+	let result = hasher.result();
+	let encoded_pwd = base64::encode(&result);
+
 	let connection: &PgConnection = &pool.get().unwrap();
 
 	let res = select(exists(user_sch::user::dsl::user
 		.filter(user_sch::user::email.eq(email)
-			.and(user_sch::user::password.eq(sha256)))))
-			.execute(connection);
-			//.get_result(connection);
+			.and(user_sch::user::password.eq(encoded_pwd)))))
+			.get_result::<bool>(connection);
 
-	true
-	/*match res {
-		Ok(res) => {
-			if res > 0 {
-				true
-			} else {
-				false
-			}
-		},
+	match res {
+		Ok(res) => res,
 		Err(_e) => false
-	}*/
+	}
 }

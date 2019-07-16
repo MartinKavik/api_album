@@ -21,6 +21,7 @@ simplelog = "0.6.0"
 diesel = { version = "1.4.2", features = ["postgres", "r2d2"] }
 r2d2 = "0.8.5"
 base64 = "0.10.1"
+sha2 = "0.8.0"
 
 [[bin]]
 name = "api_album"

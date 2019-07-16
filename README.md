@@ -61,7 +61,7 @@ Create the database with `/sql/script.sql`
 Create user in BDD :
 ```SQL
 INSERT INTO public."user"("email", "password")
-VALUES ('test@test.com', digest('password', 'sha256'))
+VALUES ('test@test.com', encode(digest('password', 'sha256'), 'base64'))
 ```
 
 ## Run
