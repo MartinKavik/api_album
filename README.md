@@ -6,16 +6,20 @@ API for albums
 
 ## Other packages
 * actix-rt : Actix runtime
-* actix-service : used for middleware  
-* serde : se-des-rialization framework
+* actix-service : Actix Service (for middlewares)
+* actix-multipart : Multipart support for actix
+* serde : serialization/deserialization framework
 * chrono : Date and time library
 * jsonwebtoken : Create and parse JWT 
-* log : logging facade
+* dotenv : To use variables from .env file
+* futures : Asynchronous tasks
+* log : Logging facade
 * simplelog : Logger
-* dotenv : to use variables from .env file
-* futures : asynchronous tasks
 * diesel : ORM
-* r2d2 : connection pool
+* r2d2 : Connection pool
+* base64 : encodes and decodes base64 as bytes or utf8
+* sha2 : hash functions
+* rexif : Extract EXIF data from JPEG and TIFF 
 
 ## Installation
 

@@ -6,6 +6,7 @@ use diesel::{QueryDsl, RunQueryDsl};
 use actix_multipart::{Multipart, Field, MultipartError};
 use futures::{future, Future, Stream};
 use base64;
+use rexif::{ExifTag, ExifEntry};
 
 use crate::service_error;
 use crate::picture_sch;
@@ -62,7 +63,35 @@ fn upload(field: Field) -> impl Future<Item = Vec<u8>, Error = Error> {
 
 fn transform(data: Vec<Vec<u8>>) -> String {
     let first = data.first().unwrap();
+	let res_exif = rexif::parse_buffer(&first);
+	if res_exif.is_ok() {
+		let entries = &res_exif.unwrap().entries;
+		parse_meta(entries, &ExifTag::Model);
+		parse_meta(entries, &ExifTag::DateTime);
+		parse_meta(entries, &ExifTag::GPSLatitude);
+		parse_meta(entries, &ExifTag::GPSLongitude);
+	}
 	base64::encode(first)
+}
+
+fn parse_meta(entries: &Vec<ExifEntry>,
+	tag: &ExifTag/*, 
+	new_picture: &mut new_picture::NewPicture*/) 
+{
+	let mut iter = entries.into_iter();
+	let opt = iter.find(| &x| x.tag.eq(tag));
+	match opt {
+		Some(e) => {
+			match tag {
+				ExifTag::Model => println!("{}", e.value_more_readable),
+				ExifTag::DateTime => println!("{}", e.value_more_readable),
+				ExifTag::GPSLatitude => println!("{}", e.value_more_readable),
+				ExifTag::GPSLongitude => println!("{}", e.value_more_readable),
+				_ => println!("None")
+			}
+		},
+		None =>  println!("None")
+	};
 }
 
 fn insert(data: String, pool: web::Data<Pool>) -> Result<bool> {
