@@ -87,10 +87,10 @@ fn parse_meta(entries: &Vec<ExifEntry>,
 				ExifTag::DateTime => println!("{}", e.value_more_readable),
 				ExifTag::GPSLatitude => println!("{}", e.value_more_readable),
 				ExifTag::GPSLongitude => println!("{}", e.value_more_readable),
-				_ => println!("None")
+				_ => ()
 			}
 		},
-		None =>  println!("None")
+		None => ()
 	};
 }
 
