@@ -5,7 +5,7 @@
 -- Dumped from database version 11.4
 -- Dumped by pg_dump version 11.4
 
--- Started on 2019-07-15 13:31:21
+-- Started on 2019-07-18 13:44:24
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
@@ -70,7 +70,8 @@ SET default_with_oids = false;
 
 CREATE TABLE public.picture (
     id integer NOT NULL,
-    data text NOT NULL
+    data text NOT NULL,
+    model character varying
 );
 
 
@@ -165,7 +166,7 @@ ALTER TABLE ONLY public.picture
     ADD CONSTRAINT pk_picture PRIMARY KEY (id);
 
 
--- Completed on 2019-07-15 13:31:22
+-- Completed on 2019-07-18 13:44:24
 
 --
 -- PostgreSQL database dump complete
