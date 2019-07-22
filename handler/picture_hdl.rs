@@ -7,6 +7,7 @@ use actix_multipart::{Multipart, Field, MultipartError};
 use futures::{future, Future, Stream};
 use base64;
 use rexif::{ExifTag, ExifEntry};
+use std::time::{SystemTime};
 
 use crate::service_error;
 use crate::picture_sch;
@@ -97,7 +98,11 @@ fn parse_meta(entries: &Vec<ExifEntry>,
 fn insert(data: String, pool: web::Data<Pool>) -> Result<bool> {
 	let con: &PgConnection = &pool.get().unwrap();
     let new_picture = new_picture::NewPicture {
-		data: data
+		data: data,
+		model: Some("model".to_string()),
+		date: SystemTime::now(),
+		latitude: Some("lat".to_string()),
+		longitude: Some("long".to_string())
 	};
 
 	let res = diesel::insert_into(picture_sch::picture::table)
