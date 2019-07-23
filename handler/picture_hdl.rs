@@ -1,5 +1,5 @@
 use actix_web::{web, Result, error, Error, HttpResponse };
-use log::{info};
+use log::{info, error};
 use diesel::r2d2::{ConnectionManager};
 use diesel::pg::PgConnection;
 use diesel::{QueryDsl, RunQueryDsl};
@@ -7,7 +7,8 @@ use actix_multipart::{Multipart, Field, MultipartError};
 use futures::{future, Future, Stream};
 use base64;
 use rexif::{ExifTag, ExifEntry};
-use std::time::{SystemTime};
+use std::time::{SystemTime, Duration};
+use chrono::{DateTime};
 
 use crate::service_error;
 use crate::picture_sch;
@@ -16,6 +17,7 @@ use crate::picture_sch;
 mod picture;
 #[path="../model/new_picture.rs"]
 mod new_picture;
+use new_picture::NewPicture;
 
 type Pool = r2d2::Pool<ConnectionManager<PgConnection>>;
 
@@ -50,10 +52,10 @@ pub fn post_picture(
         .flatten()
         .collect()
 		.map(|data_vec| transform(data_vec))
-		.map(|data| insert(data, pool))
+		.map(|picture| insert(picture, pool))
         .map(|result| HttpResponse::Ok().json(result.ok()))
         .map_err(|e| {
-            println!("failed: {}", e);
+            error!("failed: {}", e);
             e
         })
 }
@@ -62,32 +64,47 @@ fn upload(field: Field) -> impl Future<Item = Vec<u8>, Error = Error> {
     get_filedata_vec(field)
 }
 
-fn transform(data: Vec<Vec<u8>>) -> String {
-    let first = data.first().unwrap();
+fn transform(data: Vec<Vec<u8>>) -> NewPicture {
+	let first = data.first().unwrap();
+	let data = base64::encode(first);
+	let mut picture = NewPicture {
+		data: data,
+		model: None,
+		date: SystemTime::now(),
+		latitude: None,
+		longitude: None
+	};
 	let res_exif = rexif::parse_buffer(&first);
 	if res_exif.is_ok() {
 		let entries = &res_exif.unwrap().entries;
-		parse_meta(entries, &ExifTag::Model);
-		parse_meta(entries, &ExifTag::DateTime);
-		parse_meta(entries, &ExifTag::GPSLatitude);
-		parse_meta(entries, &ExifTag::GPSLongitude);
+		parse_meta(entries, &ExifTag::Model, &mut picture);
+		parse_meta(entries, &ExifTag::DateTime, &mut picture);
+		parse_meta(entries, &ExifTag::GPSLatitude, &mut picture);
+		parse_meta(entries, &ExifTag::GPSLongitude, &mut picture);
 	}
-	base64::encode(first)
+	picture
 }
 
-fn parse_meta(entries: &Vec<ExifEntry>,
-	tag: &ExifTag/*, 
-	new_picture: &mut new_picture::NewPicture*/) 
+fn parse_meta(entries: &Vec<ExifEntry>, tag: &ExifTag, picture: &mut NewPicture) 
 {
 	let mut iter = entries.into_iter();
 	let opt = iter.find(| &x| x.tag.eq(tag));
 	match opt {
 		Some(e) => {
 			match tag {
-				ExifTag::Model => println!("{}", e.value_more_readable),
-				ExifTag::DateTime => println!("{}", e.value_more_readable),
-				ExifTag::GPSLatitude => println!("{}", e.value_more_readable),
-				ExifTag::GPSLongitude => println!("{}", e.value_more_readable),
+				ExifTag::Model => picture.model = Some(e.value_more_readable.clone()),
+				ExifTag::DateTime => {
+					println!("{}", e.value_more_readable);
+					let res = DateTime::parse_from_str(&e.value_more_readable.clone(), "%Y:%m:%d %H:%M:%S");
+					if res.is_ok() {
+						let date = res.unwrap();
+						let ts = date.timestamp();
+						//let dur = SystemTime::from_secs(ts as u64);
+						//picture.date = ts;
+					}
+				}
+				ExifTag::GPSLatitude => picture.latitude = Some(e.value_more_readable.clone()),
+				ExifTag::GPSLongitude => picture.longitude = Some(e.value_more_readable.clone()),
 				_ => ()
 			}
 		},
@@ -95,18 +112,10 @@ fn parse_meta(entries: &Vec<ExifEntry>,
 	};
 }
 
-fn insert(data: String, pool: web::Data<Pool>) -> Result<bool> {
+fn insert(picture: NewPicture, pool: web::Data<Pool>) -> Result<bool> {
 	let con: &PgConnection = &pool.get().unwrap();
-    let new_picture = new_picture::NewPicture {
-		data: data,
-		model: Some("model".to_string()),
-		date: SystemTime::now(),
-		latitude: Some("lat".to_string()),
-		longitude: Some("long".to_string())
-	};
-
-	let res = diesel::insert_into(picture_sch::picture::table)
-		.values(&new_picture)
+    let res = diesel::insert_into(picture_sch::picture::table)
+		.values(&picture)
 		.execute(con);
 
 	match res {
@@ -123,7 +132,7 @@ fn get_filedata_vec(field: Field) -> Box<Future<Item = Vec<u8>, Error = Error>> 
 			future::result(rt)
         })
         .map_err(|e| {
-            println!("bytes receive failed, {:?}", e);
+            error!("bytes receive failed, {:?}", e);
             error::ErrorInternalServerError(e)
         })
 	)
