@@ -19,6 +19,9 @@ mod picture;
 #[path="../model/new_picture.rs"]
 mod new_picture;
 use new_picture::NewPicture;
+#[path="../model/picture_by_id.rs"]
+mod picture_by_id;
+use picture_by_id::PictureById;
 
 type Pool = r2d2::Pool<ConnectionManager<PgConnection>>;
 
@@ -36,17 +39,26 @@ pub fn get_picture (
 		.first::<picture::Picture>(&*connection);
 
 	match result {
-		Ok(p) => Ok(web::Json(p)),
+		Ok(p) => {
+			//let datetime: DateTime<Utc> = p.date.into();
+			let pic = PictureById {
+				id: p.id,
+				data: p.data.clone(),
+				model: p.model.clone(),
+				date: "".to_string(),
+				longitude: p.longitude.clone(),
+				latitude: p.latitude.clone()
+			};
+			Ok(web::Json(p))
+		},
 		Err(_err) => Err(service_error::ServiceError::NotFound.into())
 	}
 }
 
-
-pub fn get_pictures_ids (
+pub fn get_picture_ids (
 	pool: web::Data<Pool>
 ) -> Result<web::Json<Vec<i32>>> {
-    info!("get_pictures_ids");
-	
+    info!("get_picture_ids");
 	let connection: &PgConnection = &pool.get().unwrap();
 	let result = picture_sch::picture::dsl::picture
 		.select(picture_sch::picture::id)
@@ -64,7 +76,6 @@ pub fn post_picture(
 	pool: web::Data<Pool>
 ) -> impl Future<Item = HttpResponse, Error = Error> {
 	info!("post_picture");
-
 	multipart
         .map_err(error::ErrorInternalServerError)
         .map(|field| upload(field).into_stream())
