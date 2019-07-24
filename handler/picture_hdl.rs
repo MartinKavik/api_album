@@ -8,7 +8,7 @@ use futures::{future, Future, Stream};
 use base64;
 use rexif::{ExifTag, ExifEntry};
 use std::time::{SystemTime, Duration};
-use chrono::{DateTime};
+use chrono::{NaiveDateTime};
 
 use crate::service_error;
 use crate::picture_sch;
@@ -94,13 +94,13 @@ fn parse_meta(entries: &Vec<ExifEntry>, tag: &ExifTag, picture: &mut NewPicture)
 			match tag {
 				ExifTag::Model => picture.model = Some(e.value_more_readable.clone()),
 				ExifTag::DateTime => {
-					println!("{}", e.value_more_readable);
-					let res = DateTime::parse_from_str(&e.value_more_readable.clone(), "%Y:%m:%d %H:%M:%S");
+					let res = NaiveDateTime::parse_from_str(&e.value_more_readable.clone(), "%Y:%m:%d %H:%M:%S");
 					if res.is_ok() {
 						let date = res.unwrap();
 						let ts = date.timestamp();
-						//let dur = SystemTime::from_secs(ts as u64);
-						//picture.date = ts;
+						let secs = Duration::from_secs(ts as u64);
+						let time: SystemTime = SystemTime::UNIX_EPOCH + secs;
+						picture.date = time;
 					}
 				}
 				ExifTag::GPSLatitude => picture.latitude = Some(e.value_more_readable.clone()),
