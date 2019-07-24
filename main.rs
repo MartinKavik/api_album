@@ -56,6 +56,7 @@ fn main() -> std::io::Result<()> {
 			.service(
 				web::resource("/picture")
             		.route(web::post().to_async(picture_hdl::post_picture))
+					.route(web::get().to(picture_hdl::get_pictures_ids))
 				)
 			.service(
 				web::resource("/login")

@@ -9,6 +9,7 @@ use base64;
 use rexif::{ExifTag, ExifEntry};
 use std::time::{SystemTime, Duration};
 use chrono::{NaiveDateTime};
+use diesel::expression_methods::*;
 
 use crate::service_error;
 use crate::picture_sch;
@@ -33,6 +34,24 @@ pub fn get_picture (
 	let result = picture_sch::picture::dsl::picture
 		.find(id)
 		.first::<picture::Picture>(&*connection);
+
+	match result {
+		Ok(p) => Ok(web::Json(p)),
+		Err(_err) => Err(service_error::ServiceError::NotFound.into())
+	}
+}
+
+
+pub fn get_pictures_ids (
+	pool: web::Data<Pool>
+) -> Result<web::Json<Vec<i32>>> {
+    info!("get_pictures_ids");
+	
+	let connection: &PgConnection = &pool.get().unwrap();
+	let result = picture_sch::picture::dsl::picture
+		.select(picture_sch::picture::id)
+		.order(picture_sch::picture::date.desc())
+		.load(&*connection);
 
 	match result {
 		Ok(p) => Ok(web::Json(p)),
