@@ -8,8 +8,9 @@ use futures::{future, Future, Stream};
 use base64;
 use rexif::{ExifTag, ExifEntry};
 use std::time::{SystemTime, Duration};
-use chrono::{NaiveDateTime};
+use chrono::{NaiveDateTime, DateTime};
 use diesel::expression_methods::*;
+use chrono::offset::Utc;
 
 use crate::service_error;
 use crate::picture_sch;
@@ -28,7 +29,7 @@ type Pool = r2d2::Pool<ConnectionManager<PgConnection>>;
 pub fn get_picture (
 	param: web::Path<(u32)>,
 	pool: web::Data<Pool>
-) -> Result<web::Json<picture::Picture>> {
+) -> Result<web::Json<PictureById>> {
     info!("get_picture");
 	
 	let id = param.into_inner() as i32;
@@ -40,16 +41,17 @@ pub fn get_picture (
 
 	match result {
 		Ok(p) => {
-			//let datetime: DateTime<Utc> = p.date.into();
+			let datetime: DateTime<Utc> = p.date.clone().into();
+			let date_str = datetime.format("%Y:%m:%d %H:%M:%S").to_string();
 			let pic = PictureById {
 				id: p.id,
 				data: p.data.clone(),
 				model: p.model.clone(),
-				date: "".to_string(),
+				date: date_str,
 				longitude: p.longitude.clone(),
 				latitude: p.latitude.clone()
 			};
-			Ok(web::Json(p))
+			Ok(web::Json(pic))
 		},
 		Err(_err) => Err(service_error::ServiceError::NotFound.into())
 	}
