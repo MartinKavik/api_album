@@ -1,4 +1,4 @@
 /target/
-/log/
 Cargo.lock
 .env
+*.log
