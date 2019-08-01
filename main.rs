@@ -5,6 +5,7 @@ extern crate serde_derive;
 
 use dotenv::dotenv;
 use actix_web::{HttpServer, App, web};
+use actix_cors::Cors;
 
 #[path="./middleware/jwt_auth_mdl.rs"]
 mod jwt_auth_mdl;
@@ -48,6 +49,8 @@ fn main() -> std::io::Result<()> {
     HttpServer::new(move || {
         App::new()
 			.data(pool.clone())
+			.wrap(Cors::new()
+				.allowed_origin("http://localhost:5000"))
 			.wrap(jwt_auth_mdl::JwtAuth)
 			.service(
 				web::resource("/picture/{id}")
