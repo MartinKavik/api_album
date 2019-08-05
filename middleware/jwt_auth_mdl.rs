@@ -54,8 +54,9 @@ where
     }
 
     fn call(&mut self, req: ServiceRequest) -> Self::Future {
+        // don't validate CORS pre-flight requests
         let mut is_valid = true;
-        if req.path() != "/login" {
+        if req.method() != "OPTIONS" && req.path() != "/login" {
 			let headers = req.headers();
 			let token_opt = headers.get("token");
             match token_opt {
