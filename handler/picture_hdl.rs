@@ -84,11 +84,8 @@ pub fn post_picture(
         .map(|field| upload(field).into_stream())
         .flatten()
         .collect()
+		.map(|data_vec| first(data_vec))
 		.map(|data_vec| transform(data_vec))
-		.map_err(|e| {
-            error!("failed: {}", e);
-            e
-        })
 		.map(|result| insert(result.unwrap(), pool))
         .map(|result| HttpResponse::Ok().json(result.ok()))
         .map_err(|e| {
@@ -101,16 +98,24 @@ fn upload(field: Field) -> impl Future<Item = Vec<u8>, Error = Error> {
     get_filedata_vec(field)
 }
 
-fn transform(data: Vec<Vec<u8>>) -> Result<NewPicture, image::ImageError> {
-	let first = data.first().unwrap();
+fn first(data: Vec<Vec<u8>>) -> Vec<u8> {
+	let pic = data.first().unwrap();
+	pic.clone()
+}
 
-	let res_img = image::load_from_memory(first);
-	let img_resized = match res_img {
+/*fn reseize(data: Vec<u8>) -> Result<NewPicture, image::ImageError> {
+	let res_img = image::load_from_memory(data);
+	match res_img {
 		Err(e) => return Err(e),
-		Ok(img) => img.resize_to_fill(100, 100, FilterType::Triangle)
-	};
-	
-	let data = base64::encode(first);
+		Ok(img) => {
+			let img_reseize = img.resize_to_fill(100, 100, FilterType::Triangle);
+			Ok(img_reseize.raw_pixels())
+		}
+	}
+}*/
+
+fn transform(img: Vec<u8>) -> Result<NewPicture, image::ImageError> {
+	let data = base64::encode(&img);
 	let mut picture = NewPicture {
 		data: data,
 		model: None,
@@ -118,7 +123,7 @@ fn transform(data: Vec<Vec<u8>>) -> Result<NewPicture, image::ImageError> {
 		latitude: None,
 		longitude: None
 	};
-	let res_exif = rexif::parse_buffer(&first);
+	let res_exif = rexif::parse_buffer(&img);
 	if res_exif.is_ok() {
 		let entries = &res_exif.unwrap().entries;
 		parse_meta(entries, &ExifTag::Model, &mut picture);

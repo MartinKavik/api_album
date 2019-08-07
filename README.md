@@ -20,6 +20,7 @@ API for albums
 * base64 : encodes and decodes base64 as bytes or utf8
 * sha2 : hash functions
 * rexif : Extract EXIF data from JPEG and TIFF 
+* image : imaging processing
 
 ## Installation
 
