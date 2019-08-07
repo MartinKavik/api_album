@@ -11,6 +11,7 @@ use std::time::{SystemTime, Duration};
 use chrono::{NaiveDateTime, DateTime};
 use diesel::expression_methods::*;
 use chrono::offset::Utc;
+use image::*;
 
 use crate::service_error;
 use crate::picture_sch;
@@ -84,7 +85,11 @@ pub fn post_picture(
         .flatten()
         .collect()
 		.map(|data_vec| transform(data_vec))
-		.map(|picture| insert(picture, pool))
+		.map_err(|e| {
+            error!("failed: {}", e);
+            e
+        })
+		.map(|result| insert(result.unwrap(), pool))
         .map(|result| HttpResponse::Ok().json(result.ok()))
         .map_err(|e| {
             error!("failed: {}", e);
@@ -96,8 +101,15 @@ fn upload(field: Field) -> impl Future<Item = Vec<u8>, Error = Error> {
     get_filedata_vec(field)
 }
 
-fn transform(data: Vec<Vec<u8>>) -> NewPicture {
+fn transform(data: Vec<Vec<u8>>) -> Result<NewPicture, image::ImageError> {
 	let first = data.first().unwrap();
+
+	let res_img = image::load_from_memory(first);
+	let img_resized = match res_img {
+		Err(e) => return Err(e),
+		Ok(img) => img.resize_to_fill(100, 100, FilterType::Triangle)
+	};
+	
 	let data = base64::encode(first);
 	let mut picture = NewPicture {
 		data: data,
@@ -114,7 +126,7 @@ fn transform(data: Vec<Vec<u8>>) -> NewPicture {
 		parse_meta(entries, &ExifTag::GPSLatitude, &mut picture);
 		parse_meta(entries, &ExifTag::GPSLongitude, &mut picture);
 	}
-	picture
+	Ok(picture)
 }
 
 fn parse_meta(entries: &Vec<ExifEntry>, tag: &ExifTag, picture: &mut NewPicture) 
