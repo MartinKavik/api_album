@@ -121,6 +121,7 @@ fn first(data: Vec<Vec<u8>>) -> Vec<u8> {
 
 fn reseize(data: String) -> Result<String, std::io::Error> {
 	let res_decode = base64::decode(&data);
+	//let decode = data.as_bytes();
 	let decode = match res_decode {
 		Err(_e) => return Err(std::io::Error::new(std::io::ErrorKind::Other, "decode")),
 		Ok(r) => r
@@ -129,10 +130,15 @@ fn reseize(data: String) -> Result<String, std::io::Error> {
 	match res_img {
 		Err(_e) => return Err(std::io::Error::new(std::io::ErrorKind::Other, "reseize")),
 		Ok(img) => {
-			let img_reseize = img.resize_to_fill(100, 100, FilterType::Triangle);
+			let img_reseize = img.thumbnail(10, 10);
 			let pixels = img_reseize.raw_pixels();
-			let data_resized = base64::encode(&pixels);
-			Ok(data_resized)
+			//let pixels = img_reseize.raw_pixels();
+	//		let data_resized = base64::encode(&data);
+			//let data_resized = std::str::from_utf8(&pixels);
+
+	//		Ok(data_resized)
+			let data_encoded = base64::encode(&pixels);
+			Ok(data_encoded)
 		}
 	}
 }
