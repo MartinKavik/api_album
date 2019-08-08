@@ -41,22 +41,38 @@ pub fn get_picture (
 		.first::<picture::Picture>(&*connection);
 
 	match result {
+		Ok(p) => Ok(convert_picture_to_json(p, None)),
+		Err(_err) => Err(service_error::ServiceError::NotFound.into())
+	}
+}
+
+pub fn get_picture_thumb (
+	param: web::Path<(u32)>,
+	pool: web::Data<Pool>
+) -> Result<web::Json<PictureById>> {
+    info!("get_picture");
+	
+	let id = param.into_inner() as i32;
+
+	let connection: &PgConnection = &pool.get().unwrap();
+	let result = picture_sch::picture::dsl::picture
+		.find(id)
+		.first::<picture::Picture>(&*connection);
+
+	match result {
 		Ok(p) => {
-			let datetime: DateTime<Utc> = p.date.clone().into();
-			let date_str = datetime.format("%Y:%m:%d %H:%M:%S").to_string();
-			let pic = PictureById {
-				id: p.id,
-				data: p.data.clone(),
-				model: p.model.clone(),
-				date: date_str,
-				longitude: p.longitude.clone(),
-				latitude: p.latitude.clone()
-			};
-			Ok(web::Json(pic))
+			let res_reseize = reseize(p.data.clone());
+			match res_reseize {
+				Ok(data) => {
+					Ok(convert_picture_to_json(p, Some(data)))
+				},
+				Err(_err) => Err(service_error::ServiceError::InternalServerError.into())
+			}
 		},
 		Err(_err) => Err(service_error::ServiceError::NotFound.into())
 	}
 }
+
 
 pub fn get_picture_ids (
 	pool: web::Data<Pool>
@@ -103,16 +119,23 @@ fn first(data: Vec<Vec<u8>>) -> Vec<u8> {
 	pic.clone()
 }
 
-/*fn reseize(data: Vec<u8>) -> Result<NewPicture, image::ImageError> {
-	let res_img = image::load_from_memory(data);
+fn reseize(data: String) -> Result<String, std::io::Error> {
+	let res_decode = base64::decode(&data);
+	let decode = match res_decode {
+		Err(e) => return Err(std::io::Error::new(std::io::ErrorKind::Other, "decode")),
+		Ok(r) => r
+	};
+	let res_img = image::load_from_memory(&decode);
 	match res_img {
-		Err(e) => return Err(e),
+		Err(e) => return Err(std::io::Error::new(std::io::ErrorKind::Other, "reseize")),
 		Ok(img) => {
 			let img_reseize = img.resize_to_fill(100, 100, FilterType::Triangle);
-			Ok(img_reseize.raw_pixels())
+			let pixels = img_reseize.raw_pixels();
+			let data_resized = base64::encode(&pixels);
+			Ok(data_resized)
 		}
 	}
-}*/
+}
 
 fn transform(img: Vec<u8>) -> Result<NewPicture, image::ImageError> {
 	let data = base64::encode(&img);
@@ -185,4 +208,22 @@ fn get_filedata_vec(field: Field) -> Box<Future<Item = Vec<u8>, Error = Error>> 
             error::ErrorInternalServerError(e)
         })
 	)
+}
+
+fn convert_picture_to_json(p: picture::Picture, data_resized: Option<String>) -> web::Json<PictureById> {
+	let datetime: DateTime<Utc> = p.date.clone().into();
+	let date_str = datetime.format("%Y:%m:%d %H:%M:%S").to_string();
+	let data = match data_resized {
+		Some(d) => d.clone(),
+		None => p.data.clone()
+	};
+	let pic = PictureById {
+		id: p.id,
+		data: data,
+		model: p.model.clone(),
+		date: date_str,
+		longitude: p.longitude.clone(),
+		latitude: p.latitude.clone()
+	};
+	web::Json(pic)
 }

@@ -57,6 +57,10 @@ fn main() -> std::io::Result<()> {
             		.route(web::get().to(picture_hdl::get_picture))
 				)
 			.service(
+				web::resource("/picture/{id}/thumb")
+            		.route(web::get().to(picture_hdl::get_picture_thumb))
+				)
+			.service(
 				web::resource("/picture")
             		.route(web::post().to_async(picture_hdl::post_picture))
 					.route(web::get().to(picture_hdl::get_picture_ids))
