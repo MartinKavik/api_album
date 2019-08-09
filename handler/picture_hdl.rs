@@ -11,7 +11,6 @@ use std::time::{SystemTime, Duration};
 use chrono::{NaiveDateTime, DateTime};
 use diesel::expression_methods::*;
 use chrono::offset::Utc;
-use image::*;
 
 use crate::service_error;
 use crate::picture_sch;
@@ -130,15 +129,16 @@ fn reseize(data: String) -> Result<String, std::io::Error> {
 	match res_img {
 		Err(_e) => return Err(std::io::Error::new(std::io::ErrorKind::Other, "reseize")),
 		Ok(img) => {
-			let img_reseize = img.thumbnail(10, 10);
-			let pixels = img_reseize.raw_pixels();
-			//let pixels = img_reseize.raw_pixels();
-	//		let data_resized = base64::encode(&data);
-			//let data_resized = std::str::from_utf8(&pixels);
-
-	//		Ok(data_resized)
-			let data_encoded = base64::encode(&pixels);
-			Ok(data_encoded)
+			let img_reseize = img.thumbnail(100, 100);
+			let mut buf = Vec::new();
+			let res_write = img_reseize.write_to(&mut buf, image::ImageOutputFormat::PNG);
+			match res_write {
+				Err(_e) => return Err(std::io::Error::new(std::io::ErrorKind::Other, "write")),
+				_ => {
+					let data_encoded = base64::encode(&buf);
+					Ok(data_encoded)
+				}
+			}
 		}
 	}
 }
