@@ -2,10 +2,10 @@
 -- PostgreSQL database dump
 --
 
--- Dumped from database version 11.3
--- Dumped by pg_dump version 11.3
+-- Dumped from database version 11.4
+-- Dumped by pg_dump version 11.4
 
--- Started on 2019-07-24 20:28:57 CEST
+-- Started on 2019-08-12 21:24:51 CEST
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
@@ -20,14 +20,14 @@ SET row_security = off;
 
 DROP DATABASE album;
 --
--- TOC entry 3949 (class 1262 OID 16617)
--- Name: album; Type: DATABASE; Schema: -; Owner: bgael
+-- TOC entry 3949 (class 1262 OID 16385)
+-- Name: album; Type: DATABASE; Schema: -; Owner: postgres
 --
 
 CREATE DATABASE album WITH TEMPLATE = template0 ENCODING = 'UTF8' LC_COLLATE = 'fr_FR.UTF-8' LC_CTYPE = 'fr_FR.UTF-8';
 
 
-ALTER DATABASE album OWNER TO bgael;
+ALTER DATABASE album OWNER TO postgres;
 
 \connect album
 
@@ -43,7 +43,7 @@ SET client_min_messages = warning;
 SET row_security = off;
 
 --
--- TOC entry 2 (class 3079 OID 24821)
+-- TOC entry 2 (class 3079 OID 16387)
 -- Name: pgcrypto; Type: EXTENSION; Schema: -; Owner: 
 --
 
@@ -64,7 +64,7 @@ SET default_tablespace = '';
 SET default_with_oids = false;
 
 --
--- TOC entry 199 (class 1259 OID 24877)
+-- TOC entry 197 (class 1259 OID 16424)
 -- Name: picture; Type: TABLE; Schema: public; Owner: bgael
 --
 
@@ -74,14 +74,15 @@ CREATE TABLE public.picture (
     model character varying,
     latitude character varying,
     longitude character varying,
-    date timestamp without time zone
+    date timestamp without time zone,
+    thumb text NOT NULL
 );
 
 
 ALTER TABLE public.picture OWNER TO bgael;
 
 --
--- TOC entry 200 (class 1259 OID 24883)
+-- TOC entry 198 (class 1259 OID 16430)
 -- Name: picture_Id_seq; Type: SEQUENCE; Schema: public; Owner: bgael
 --
 
@@ -98,7 +99,7 @@ ALTER TABLE public."picture_Id_seq" OWNER TO bgael;
 
 --
 -- TOC entry 3951 (class 0 OID 0)
--- Dependencies: 200
+-- Dependencies: 198
 -- Name: picture_Id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: bgael
 --
 
@@ -106,7 +107,7 @@ ALTER SEQUENCE public."picture_Id_seq" OWNED BY public.picture.id;
 
 
 --
--- TOC entry 197 (class 1259 OID 24858)
+-- TOC entry 199 (class 1259 OID 16432)
 -- Name: user; Type: TABLE; Schema: public; Owner: bgael
 --
 
@@ -120,7 +121,7 @@ CREATE TABLE public."user" (
 ALTER TABLE public."user" OWNER TO bgael;
 
 --
--- TOC entry 198 (class 1259 OID 24864)
+-- TOC entry 200 (class 1259 OID 16438)
 -- Name: user_id_seq; Type: SEQUENCE; Schema: public; Owner: bgael
 --
 
@@ -137,7 +138,7 @@ ALTER TABLE public.user_id_seq OWNER TO bgael;
 
 --
 -- TOC entry 3952 (class 0 OID 0)
--- Dependencies: 198
+-- Dependencies: 200
 -- Name: user_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: bgael
 --
 
@@ -145,7 +146,7 @@ ALTER SEQUENCE public.user_id_seq OWNED BY public."user".id;
 
 
 --
--- TOC entry 3820 (class 2604 OID 24885)
+-- TOC entry 3819 (class 2604 OID 16440)
 -- Name: picture id; Type: DEFAULT; Schema: public; Owner: bgael
 --
 
@@ -153,7 +154,7 @@ ALTER TABLE ONLY public.picture ALTER COLUMN id SET DEFAULT nextval('public."pic
 
 
 --
--- TOC entry 3819 (class 2604 OID 24866)
+-- TOC entry 3820 (class 2604 OID 16441)
 -- Name: user id; Type: DEFAULT; Schema: public; Owner: bgael
 --
 
@@ -161,7 +162,7 @@ ALTER TABLE ONLY public."user" ALTER COLUMN id SET DEFAULT nextval('public.user_
 
 
 --
--- TOC entry 3822 (class 2606 OID 24887)
+-- TOC entry 3822 (class 2606 OID 16443)
 -- Name: picture pk_picture; Type: CONSTRAINT; Schema: public; Owner: bgael
 --
 
@@ -169,7 +170,7 @@ ALTER TABLE ONLY public.picture
     ADD CONSTRAINT pk_picture PRIMARY KEY (id);
 
 
--- Completed on 2019-07-24 20:28:57 CEST
+-- Completed on 2019-08-12 21:24:51 CEST
 
 --
 -- PostgreSQL database dump complete

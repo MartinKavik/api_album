@@ -23,6 +23,9 @@ use new_picture::NewPicture;
 #[path="../model/picture_by_id.rs"]
 mod picture_by_id;
 use picture_by_id::PictureById;
+#[path="../model/picture_thumb.rs"]
+mod picture_thumb;
+use picture_thumb::PictureThumb;
 
 type Pool = r2d2::Pool<ConnectionManager<PgConnection>>;
 
@@ -35,6 +38,7 @@ pub fn get_picture (
 	let id = param.into_inner() as i32;
 
 	let connection: &PgConnection = &pool.get().unwrap();
+
 	let result = picture_sch::picture::dsl::picture
 		.find(id)
 		.first::<picture::Picture>(&*connection);
@@ -48,26 +52,19 @@ pub fn get_picture (
 pub fn get_picture_thumb (
 	param: web::Path<(u32)>,
 	pool: web::Data<Pool>
-) -> Result<web::Json<PictureById>> {
+) -> Result<web::Json<PictureThumb>> {
     info!("get_picture");
 	
 	let id = param.into_inner() as i32;
 
 	let connection: &PgConnection = &pool.get().unwrap();
 	let result = picture_sch::picture::dsl::picture
+		.select((picture_sch::picture::id, picture_sch::picture::thumb))
 		.find(id)
-		.first::<picture::Picture>(&*connection);
+		.first::<PictureThumb>(&*connection);
 
 	match result {
-		Ok(p) => {
-			let res_reseize = reseize(p.data.clone());
-			match res_reseize {
-				Ok(data) => {
-					Ok(convert_picture_to_json(p, Some(data)))
-				},
-				Err(_err) => Err(service_error::ServiceError::InternalServerError.into())
-			}
-		},
+		Ok(p) => Ok(web::Json(p)),
 		Err(_err) => Err(service_error::ServiceError::NotFound.into())
 	}
 }
@@ -118,22 +115,16 @@ fn first(data: Vec<Vec<u8>>) -> Vec<u8> {
 	pic.clone()
 }
 
-fn reseize(data: String) -> Result<String, std::io::Error> {
-	let res_decode = base64::decode(&data);
-	//let decode = data.as_bytes();
-	let decode = match res_decode {
-		Err(_e) => return Err(std::io::Error::new(std::io::ErrorKind::Other, "decode")),
-		Ok(r) => r
-	};
-	let res_img = image::load_from_memory(&decode);
+fn reseize(data: Vec<u8>) -> Result<String, image::ImageError> {
+	let res_img = image::load_from_memory(&data);
 	match res_img {
-		Err(_e) => return Err(std::io::Error::new(std::io::ErrorKind::Other, "reseize")),
+		Err(e) => return Err(e),
 		Ok(img) => {
 			let img_reseize = img.thumbnail(100, 100);
 			let mut buf = Vec::new();
 			let res_write = img_reseize.write_to(&mut buf, image::ImageOutputFormat::PNG);
 			match res_write {
-				Err(_e) => return Err(std::io::Error::new(std::io::ErrorKind::Other, "write")),
+				Err(e) => return Err(e),
 				_ => {
 					let data_encoded = base64::encode(&buf);
 					Ok(data_encoded)
@@ -150,7 +141,8 @@ fn transform(img: Vec<u8>) -> Result<NewPicture, image::ImageError> {
 		model: None,
 		date: SystemTime::now(),
 		latitude: None,
-		longitude: None
+		longitude: None,
+		thumb: "".to_string()
 	};
 	let res_exif = rexif::parse_buffer(&img);
 	if res_exif.is_ok() {
@@ -159,6 +151,11 @@ fn transform(img: Vec<u8>) -> Result<NewPicture, image::ImageError> {
 		parse_meta(entries, &ExifTag::DateTime, &mut picture);
 		parse_meta(entries, &ExifTag::GPSLatitude, &mut picture);
 		parse_meta(entries, &ExifTag::GPSLongitude, &mut picture);
+	}
+	let thumb = reseize(img);
+	match thumb {
+		Ok(t) => picture.thumb = t,
+		Err(e) => return Err(e)
 	}
 	Ok(picture)
 }

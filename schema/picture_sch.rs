@@ -6,5 +6,6 @@ table! {
         date -> Timestamp,
         latitude -> Nullable<VarChar>,
         longitude -> Nullable<VarChar>,
+        thumb -> Text,
     }
 }

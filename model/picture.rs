@@ -6,4 +6,5 @@ pub struct Picture {
     pub date: std::time::SystemTime,
     pub latitude: Option<String>,
     pub longitude: Option<String>,
+    pub thumb: String,
 }

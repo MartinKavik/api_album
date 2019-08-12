@@ -8,4 +8,5 @@ pub struct NewPicture {
     pub date: std::time::SystemTime,
     pub latitude: Option<String>,
     pub longitude: Option<String>,
+    pub thumb: String,
 }
