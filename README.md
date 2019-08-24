@@ -86,6 +86,10 @@ http://127.0.0.1:8080/login
 
 If you encounter this error at build : 
 ```
+note: /usr/bin/ld : ne peut trouver -lpq
+```
+or
+```
 error: linking with `cc` failed: exit code: 1
 ```
 

@@ -199,7 +199,7 @@ fn insert(picture: NewPicture, pool: web::Data<Pool>) -> Result<bool> {
 	}
 }
 
-fn get_filedata_vec(field: Field) -> Box<Future<Item = Vec<u8>, Error = Error>> {
+fn get_filedata_vec(field: Field) -> Box<dyn Future<Item = Vec<u8>, Error = Error>> {
 	Box::new(
         field.fold(Vec::new(), move |mut acc : Vec<u8>, bytes| {
             acc.append(bytes.to_vec().as_mut());
